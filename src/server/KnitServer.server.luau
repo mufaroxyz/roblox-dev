@@ -1,7 +1,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Knit = require(ReplicatedStorage.Packages.knit)
+local ServerScriptService = game:GetService("ServerScriptService")
 
-Knit.AddServices(script.Parent:WaitForChild("Services"))
+local Knit = require(ReplicatedStorage.Packages.knit)
+local Services = ServerScriptService.Server:WaitForChild("Services")
+assert(Services, "Services missing")
+
+Knit.AddServices(Services)
 
 Knit.Start():catch(
   function (err)
@@ -11,6 +15,3 @@ Knit.Start():catch(
 ):await()
 
 print("Knit Server Started")
-
-local PointService = Knit.GetService("PointService")
-PointService:Hello()
