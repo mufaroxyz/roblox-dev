@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 
 local PlayerModel = require(ReplicatedStorage.Shared.Models.PlayerModel)
 local Knit = require(ReplicatedStorage.Packages.knit)
+local Signal = require(Knit.Util.Signal)
 local Enviroment = require(ServerScriptService.Server.Utils.Environment)
 local ProfileService = require(ServerScriptService.Server.Utils.ProfileService)
 
@@ -12,9 +13,10 @@ local DataService = Knit.CreateService {
   Name = "DataService",
 }
 
-DataService.env = Enviroment:GetEnvironment()
+DataService.Env = Enviroment:GetEnvironment()
+DataService.DataLoaded = Signal.new()
 
-local ProfileStore = ProfileService.GetProfileStore(DataService.env.dbContext, PlayerModel.DefaultPlayerData)
+local ProfileStore = ProfileService.GetProfileStore(DataService.Env.dbContext, PlayerModel.DefaultPlayerData)
 ---@diagnostic disable-next-line: undefined-type
 local Profiles: { [Player]: ProfileService.Profile<PlayerModel.PlayerDataModel> } = {}
 
@@ -35,7 +37,7 @@ function DataService:GetPlayer(player: Player)
   return Profiles[player] or nil
 end
 
-fn.PlayerAdded = function(player: Player)
+fn.PlayerAdded = function(player: Player, self: boolean?)
   local userId = player.UserId
   local profile = ProfileStore:LoadProfileAsync(tostring(userId))
 
@@ -50,7 +52,9 @@ fn.PlayerAdded = function(player: Player)
 
     if player:IsDescendantOf(Players) == true then
       Profiles[player] = profile
-      print(profile)
+      if self == true then
+        DataService.DataLoaded:Fire(player)
+      end
     else
       profile:Release()
     end
